@@ -17,7 +17,7 @@ export function GoogleButton() {
     <button
       type="button"
       onClick={handleGoogleSignIn}
-      className="flex items-center justify-center gap-2 rounded-full border border-sky-200 bg-white py-2 font-semibold text-sky-900 shadow-sm transition hover:bg-sky-50"
+      className="flex w-full items-center justify-center gap-2 rounded-full border border-sky-200 bg-white py-2 font-semibold text-sky-900 shadow-sm transition hover:bg-sky-50"
     >
       <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
         <path
