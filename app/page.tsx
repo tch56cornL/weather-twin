@@ -1,4 +1,12 @@
-export default function Home() {
+import Link from "next/link";
+import { createClient } from "@/lib/supabase/server";
+
+export default async function Home() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   return (
     <div className="relative flex flex-1 flex-col items-center justify-center overflow-hidden bg-gradient-to-b from-sky-400 via-sky-300 to-amber-100 px-6 py-24 text-center">
       {/* Sun */}
@@ -16,9 +24,30 @@ export default function Home() {
         <p className="max-w-md text-lg font-medium text-white/90 drop-shadow-sm">
           Save the weather you love, then find its twin anywhere in the world.
         </p>
-        <div className="mt-4 rounded-full bg-white/80 px-6 py-2 text-sm font-semibold text-sky-700 shadow">
-          🚧 Under construction — login &amp; matching coming soon
-        </div>
+
+        {user ? (
+          <Link
+            href="/dashboard"
+            className="mt-4 rounded-full bg-white px-6 py-3 text-sm font-bold text-sky-700 shadow-lg transition hover:bg-sky-50"
+          >
+            Go to your dashboard →
+          </Link>
+        ) : (
+          <div className="mt-4 flex gap-3">
+            <Link
+              href="/signup"
+              className="rounded-full bg-white px-6 py-3 text-sm font-bold text-sky-700 shadow-lg transition hover:bg-sky-50"
+            >
+              Sign up
+            </Link>
+            <Link
+              href="/login"
+              className="rounded-full bg-white/30 px-6 py-3 text-sm font-bold text-white shadow-lg backdrop-blur transition hover:bg-white/40"
+            >
+              Log in
+            </Link>
+          </div>
+        )}
       </main>
     </div>
   );
