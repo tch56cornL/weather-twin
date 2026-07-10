@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { AuthCard } from "@/components/auth-card";
+import { GoogleButton } from "@/components/google-button";
 
 export default function SignupPage() {
   const [email, setEmail] = useState("");
@@ -92,6 +93,14 @@ export default function SignupPage() {
           {loading ? "Signing up…" : "Sign up"}
         </button>
       </form>
+
+      <div className="my-5 flex items-center gap-3 text-xs font-semibold text-sky-700/60">
+        <span className="h-px flex-1 bg-sky-200" />
+        OR
+        <span className="h-px flex-1 bg-sky-200" />
+      </div>
+
+      <GoogleButton />
 
       <p className="mt-6 text-center text-sm text-sky-800">
         Already have an account?{" "}
