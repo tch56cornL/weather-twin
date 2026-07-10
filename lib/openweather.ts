@@ -66,8 +66,10 @@ export async function fetchWeatherSnapshot(
   const currentUrl = `https://api.openweathermap.org/data/4.0/onecall/current?lat=${lat}&lon=${lon}&units=metric&appid=${API_KEY}`;
   const airUrl = `https://api.openweathermap.org/data/2.5/air_pollution?lat=${lat}&lon=${lon}&appid=${API_KEY}`;
 
-  const today = new Date().toISOString().slice(0, 10);
-  const dailyUrl = `https://api.openweathermap.org/data/4.0/onecall/timeline/1day?lat=${lat}&lon=${lon}&units=metric&date=${today}&appid=${API_KEY}`;
+  // The daily timeline endpoint ignores a `date` filter and always returns a
+  // fixed 10-day window centered on today, so we pick out today's entry
+  // ourselves below rather than trusting array index 0.
+  const dailyUrl = `https://api.openweathermap.org/data/4.0/onecall/timeline/1day?lat=${lat}&lon=${lon}&units=metric&appid=${API_KEY}`;
 
   const [currentRes, airRes, dailyRes] = await Promise.all([
     fetch(currentUrl),
@@ -91,7 +93,11 @@ export async function fetchWeatherSnapshot(
   let dailyAvgTempC = current.temp;
   if (dailyRes.ok) {
     const dailyJson = await dailyRes.json();
-    const day = dailyJson.data?.[0]?.temp;
+    const entries: Array<{ dt: number; temp?: Record<string, number> }> =
+      dailyJson.data ?? [];
+    const todaysEntry =
+      entries.find((e) => e.dt >= current.dt) ?? entries[entries.length - 1];
+    const day = todaysEntry?.temp;
     if (day) {
       const parts = [day.morn, day.day, day.eve, day.night].filter(
         (n: number | undefined) => typeof n === "number",
