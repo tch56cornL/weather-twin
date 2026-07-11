@@ -3,6 +3,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { LocationDetail } from "@/components/location-detail";
 import { WeatherMatches } from "@/components/weather-matches";
+import { DeleteLocationButton } from "@/components/delete-location-button";
 
 export default async function LocationDetailPage({
   params,
@@ -34,12 +35,18 @@ export default async function LocationDetailPage({
       <div className="absolute -top-16 -right-16 h-56 w-56 rounded-full bg-yellow-300 shadow-[0_0_100px_35px_rgba(253,224,71,0.7)]" />
 
       <div className="relative z-10 w-full max-w-lg">
-        <Link
-          href="/dashboard"
-          className="mb-4 inline-block text-sm font-semibold text-white/90 hover:underline"
-        >
-          ← Back to dashboard
-        </Link>
+        <div className="mb-4 flex items-center justify-between">
+          <Link
+            href="/dashboard"
+            className="text-sm font-semibold text-white/90 hover:underline"
+          >
+            ← Back to dashboard
+          </Link>
+          <DeleteLocationButton
+            locationId={location.id}
+            cityName={location.city_name}
+          />
+        </div>
         <LocationDetail location={location} />
         <WeatherMatches locationId={location.id} />
       </div>
