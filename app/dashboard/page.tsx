@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { LogoutButton } from "@/components/logout-button";
 import { UnitToggle } from "@/components/unit-toggle";
 import { SavedLocationsList } from "@/components/saved-locations-list";
+import { CurrentWeatherWidget } from "@/components/current-weather-widget";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -35,7 +36,11 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      <div className="relative z-10 mt-12 flex w-full max-w-2xl flex-col items-center gap-3 text-center">
+      <div className="relative z-10 mt-12 flex w-full max-w-2xl flex-col items-center">
+        <CurrentWeatherWidget />
+      </div>
+
+      <div className="relative z-10 flex w-full max-w-2xl flex-col items-center gap-3 text-center">
         <span className="text-5xl">🧳🌎</span>
         <h1 className="text-3xl font-black text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.25)]">
           Your saved locations
