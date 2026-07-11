@@ -1,12 +1,20 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import { useUnitSystem } from "@/components/unit-context";
 import { formatTemp } from "@/lib/units";
+
+const WeatherTwinsMap = dynamic(
+  () => import("@/components/weather-twins-map").then((m) => m.WeatherTwinsMap),
+  { ssr: false, loading: () => <div className="h-80 w-full animate-pulse rounded-2xl bg-sky-100" /> },
+);
 
 type Match = {
   name: string;
   country: string;
+  lat: number;
+  lon: number;
   tempC: number;
   percent: number;
 };
@@ -18,7 +26,17 @@ function matchLabel(percent: number): { text: string; classes: string } {
   return { text: "Different vibe", classes: "bg-gray-100 text-gray-600" };
 }
 
-export function WeatherMatches({ locationId }: { locationId: string }) {
+export function WeatherMatches({
+  locationId,
+  originName,
+  originLat,
+  originLon,
+}: {
+  locationId: string;
+  originName: string;
+  originLat: number;
+  originLon: number;
+}) {
   const { system } = useUnitSystem();
   const [matches, setMatches] = useState<Match[] | null>(null);
   const [loading, setLoading] = useState(false);
@@ -82,7 +100,14 @@ export function WeatherMatches({ locationId }: { locationId: string }) {
       )}
 
       {matches && matches.length > 0 && (
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-4">
+          <WeatherTwinsMap
+            originName={originName}
+            originLat={originLat}
+            originLon={originLon}
+            twins={matches}
+          />
+
           {matches.map((m, i) => {
             const label = matchLabel(m.percent);
             return (

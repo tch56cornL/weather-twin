@@ -48,7 +48,12 @@ export default async function LocationDetailPage({
           />
         </div>
         <LocationDetail location={location} />
-        <WeatherMatches locationId={location.id} />
+        <WeatherMatches
+          locationId={location.id}
+          originName={location.city_name}
+          originLat={location.lat}
+          originLon={location.lon}
+        />
       </div>
     </div>
   );
