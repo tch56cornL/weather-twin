@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { LocationDetail } from "@/components/location-detail";
+import { WeatherMatches } from "@/components/weather-matches";
 
 export default async function LocationDetailPage({
   params,
@@ -40,6 +41,7 @@ export default async function LocationDetailPage({
           ← Back to dashboard
         </Link>
         <LocationDetail location={location} />
+        <WeatherMatches locationId={location.id} />
       </div>
     </div>
   );

@@ -46,7 +46,7 @@ export async function reverseGeocode(
   return { name: data[0].name, country: data[0].country };
 }
 
-export type WeatherSnapshot = {
+export type WeatherMetrics = {
   tempC: number;
   feelsLikeC: number;
   windSpeedMs: number;
@@ -56,26 +56,20 @@ export type WeatherSnapshot = {
   visibilityM: number;
   pressureHpa: number;
   airQualityIndex: number;
+};
+
+export type WeatherSnapshot = WeatherMetrics & {
   dailyAvgTempC: number;
 };
 
-export async function fetchWeatherSnapshot(
+async function fetchCurrentAndAir(
   lat: number,
   lon: number,
-): Promise<WeatherSnapshot> {
+): Promise<{ current: Record<string, number>; airQualityIndex: number }> {
   const currentUrl = `https://api.openweathermap.org/data/4.0/onecall/current?lat=${lat}&lon=${lon}&units=metric&appid=${API_KEY}`;
   const airUrl = `https://api.openweathermap.org/data/2.5/air_pollution?lat=${lat}&lon=${lon}&appid=${API_KEY}`;
 
-  // The daily timeline endpoint ignores a `date` filter and always returns a
-  // fixed 10-day window centered on today, so we pick out today's entry
-  // ourselves below rather than trusting array index 0.
-  const dailyUrl = `https://api.openweathermap.org/data/4.0/onecall/timeline/1day?lat=${lat}&lon=${lon}&units=metric&appid=${API_KEY}`;
-
-  const [currentRes, airRes, dailyRes] = await Promise.all([
-    fetch(currentUrl),
-    fetch(airUrl),
-    fetch(dailyUrl),
-  ]);
+  const [currentRes, airRes] = await Promise.all([fetch(currentUrl), fetch(airUrl)]);
 
   if (!currentRes.ok) {
     const body = await currentRes.text();
@@ -88,7 +82,53 @@ export async function fetchWeatherSnapshot(
 
   const currentJson = await currentRes.json();
   const airJson = await airRes.json();
-  const current = currentJson.data[0];
+
+  return {
+    current: currentJson.data[0],
+    airQualityIndex: airJson.list?.[0]?.main?.aqi ?? 0,
+  };
+}
+
+function toWeatherMetrics(
+  current: Record<string, number>,
+  airQualityIndex: number,
+): WeatherMetrics {
+  return {
+    tempC: current.temp,
+    feelsLikeC: current.feels_like,
+    windSpeedMs: current.wind_speed,
+    windGustMs: typeof current.wind_gust === "number" ? current.wind_gust : null,
+    uvIndex: current.uvi,
+    humidity: current.humidity,
+    visibilityM: current.visibility,
+    pressureHpa: current.pressure,
+    airQualityIndex,
+  };
+}
+
+// Used for the 150-city comparison pool: current weather + air quality only
+// (no daily-average call), since daily average isn't part of the match score.
+export async function fetchCityMatchMetrics(
+  lat: number,
+  lon: number,
+): Promise<WeatherMetrics> {
+  const { current, airQualityIndex } = await fetchCurrentAndAir(lat, lon);
+  return toWeatherMetrics(current, airQualityIndex);
+}
+
+export async function fetchWeatherSnapshot(
+  lat: number,
+  lon: number,
+): Promise<WeatherSnapshot> {
+  // The daily timeline endpoint ignores a `date` filter and always returns a
+  // fixed 10-day window centered on today, so we pick out today's entry
+  // ourselves below rather than trusting array index 0.
+  const dailyUrl = `https://api.openweathermap.org/data/4.0/onecall/timeline/1day?lat=${lat}&lon=${lon}&units=metric&appid=${API_KEY}`;
+
+  const [{ current, airQualityIndex }, dailyRes] = await Promise.all([
+    fetchCurrentAndAir(lat, lon),
+    fetch(dailyUrl),
+  ]);
 
   let dailyAvgTempC = current.temp;
   if (dailyRes.ok) {
@@ -111,15 +151,7 @@ export async function fetchWeatherSnapshot(
   }
 
   return {
-    tempC: current.temp,
-    feelsLikeC: current.feels_like,
-    windSpeedMs: current.wind_speed,
-    windGustMs: typeof current.wind_gust === "number" ? current.wind_gust : null,
-    uvIndex: current.uvi,
-    humidity: current.humidity,
-    visibilityM: current.visibility,
-    pressureHpa: current.pressure,
-    airQualityIndex: airJson.list?.[0]?.main?.aqi ?? 0,
+    ...toWeatherMetrics(current, airQualityIndex),
     dailyAvgTempC,
   };
 }
