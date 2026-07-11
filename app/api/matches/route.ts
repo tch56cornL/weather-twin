@@ -132,5 +132,7 @@ export async function GET(request: Request) {
 
   results.sort((a, b) => b!.percent - a!.percent);
 
-  return NextResponse.json({ matches: results.slice(0, 20) });
+  const strongMatches = results.filter((r) => r!.percent >= 80).slice(0, 5);
+
+  return NextResponse.json({ matches: strongMatches });
 }

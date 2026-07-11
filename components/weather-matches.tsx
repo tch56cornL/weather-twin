@@ -65,7 +65,23 @@ export function WeatherMatches({ locationId }: { locationId: string }) {
         </p>
       )}
 
-      {matches && (
+      {matches && matches.length === 0 && (
+        <div className="flex flex-col items-center gap-3 text-center">
+          <p className="text-sm text-sky-800">
+            No cities are a strong match (80%+) right now — weather shifts
+            over time, so try again later.
+          </p>
+          <button
+            onClick={findMatches}
+            disabled={loading}
+            className="rounded-full border border-sky-300 px-4 py-2 text-sm font-semibold text-sky-700 hover:bg-sky-50"
+          >
+            {loading ? "Refreshing…" : "↻ Check again"}
+          </button>
+        </div>
+      )}
+
+      {matches && matches.length > 0 && (
         <div className="flex flex-col gap-2">
           {matches.map((m, i) => {
             const label = matchLabel(m.percent);
