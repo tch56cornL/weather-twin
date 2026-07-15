@@ -3,8 +3,13 @@ import { createClient } from "@/lib/supabase/server";
 import { fetchCityMatchMetrics, type WeatherMetrics } from "@/lib/openweather";
 import { matchPercent } from "@/lib/matching";
 import { CITIES } from "@/lib/cities";
+import { getRemainingOneCallBudget, recordOneCallUsage } from "@/lib/api-budget";
 
-const CACHE_TTL_MINUTES = 20;
+// City weather is cached for 6 hours. Combined with the daily budget cap
+// below, this keeps normal usage well under OpenWeatherMap's 1,000
+// free "One Call" requests/day even if the matching feature is used
+// repeatedly across a testing session.
+const CACHE_TTL_MINUTES = 360;
 
 function cityKey(name: string, country: string) {
   return `${name},${country}`;
@@ -64,9 +69,15 @@ export async function GET(request: Request) {
     return new Date(row.fetched_at).getTime() < staleCutoff;
   });
 
+  let limitedByBudget = false;
+
   if (staleCities.length > 0) {
+    const remainingBudget = await getRemainingOneCallBudget(supabase);
+    const citiesToFetch = staleCities.slice(0, remainingBudget);
+    limitedByBudget = citiesToFetch.length < staleCities.length;
+
     const fresh = await Promise.all(
-      staleCities.map(async (c) => {
+      citiesToFetch.map(async (c) => {
         try {
           const metrics = await fetchCityMatchMetrics(c.lat, c.lon);
           return { city: c, metrics };
@@ -101,6 +112,7 @@ export async function GET(request: Request) {
       for (const row of rowsToUpsert) {
         cacheByKey.set(row.city_key, row);
       }
+      await recordOneCallUsage(supabase, rowsToUpsert.length);
     }
   }
 
@@ -134,5 +146,10 @@ export async function GET(request: Request) {
 
   const strongMatches = results.filter((r) => r!.percent >= 80).slice(0, 5);
 
-  return NextResponse.json({ matches: strongMatches });
+  return NextResponse.json({
+    matches: strongMatches,
+    note: limitedByBudget
+      ? "Today's free weather-check limit is close, so some cities are using slightly older data."
+      : null,
+  });
 }

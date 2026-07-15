@@ -39,6 +39,7 @@ export function WeatherMatches({
 }) {
   const { system } = useUnitSystem();
   const [matches, setMatches] = useState<Match[] | null>(null);
+  const [note, setNote] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -50,6 +51,7 @@ export function WeatherMatches({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Couldn't find matches.");
       setMatches(data.matches);
+      setNote(data.note ?? null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
     } finally {
@@ -97,6 +99,12 @@ export function WeatherMatches({
             {loading ? "Refreshing…" : "↻ Check again"}
           </button>
         </div>
+      )}
+
+      {matches && note && (
+        <p className="mb-3 rounded-lg bg-amber-50 px-3 py-2 text-center text-xs text-amber-700">
+          ℹ️ {note}
+        </p>
       )}
 
       {matches && matches.length > 0 && (
